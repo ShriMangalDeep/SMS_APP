@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import axios from 'axios';
 import { Form, Input, Button, Radio ,notification} from 'antd'
+
 // ===========> GRAND, 
 const Festival='diwali' // not more than 6 characters
 
@@ -47,13 +48,13 @@ const openNotification = (openType,message,description,placement) => {
   };
   
 
-function Generate_Message(data,id) {
+function Generate_Message(data) {
     switch (data.smstype) {
         case 'id':  
             return [
-                `Welcome ${data.name} for ${Festival} offer, your customer-id is ${id}. We also accept online payment at 9408276130 - FROM SUNGOLD (MANGALDEEP).`,
-                `Congratulations ${data.name}, your registration ID is ${id} for ${Festival} offer. We also accept online payment at 9408276130 - FROM SUNGOLD (MANGALDEEP).`,
-                `Congratulations ${data.name} having listed with ID : ${id} for ${Festival} offer. We also accept online payment at 9408276130 - FROM SUNGOLD (MANGALDEEP).`
+                `Welcome ${data.name} for ${Festival} offer, your customer-id is ${data.id}. We also accept online payment at 9408276130 - FROM SUNGOLD (MANGALDEEP).`,
+                `Congratulations ${data.name}, your registration ID is ${data.id} for ${Festival} offer. We also accept online payment at 9408276130 - FROM SUNGOLD (MANGALDEEP).`,
+                `Congratulations ${data.name} having listed with ID : ${data.id} for ${Festival} offer. We also accept online payment at 9408276130 - FROM SUNGOLD (MANGALDEEP).`
             ]
             break;
         case 'amount':
@@ -64,7 +65,10 @@ function Generate_Message(data,id) {
             ]
             break;
         case 'custom':
-            return [data.custom_msg]
+            return [data.message]
+            break;
+        default :
+            return [data.message]
             break;
     }
     // return [
@@ -73,29 +77,32 @@ function Generate_Message(data,id) {
 }
 
 const Send_SMS = () => {
-    const [smstype, setsmstype] = useState("");
-    const [id, setid] = useState("");
-    const [wallet, setwallet] = useState(0);
+    const [smsData,setsmsData] = useState({
+        name:"",
+        phonenumber:"",
+        smstype:"",
+        messageText:"",
+        amount:"",
+        id:revisedRandId(),
+        wallet:""
+    });
     const [loading, setloading] = useState(false)
 
     const onFinish = async (values) => {
         setloading(true);
         try{
-            console.log('Success:', values);
-            const msg=Generate_Message(values,id);
-            const final_msg=msg[Math.floor(Math.random()*msg.length)]
-            console.log(final_msg);
-            const response = await axios.get(`https://www.fast2sms.com/dev/bulkV2?authorization=PvvtrxIbU6aK2ktHBGjnNdsnMxPwoL7Myb69SPTqv0rii9OtRXS7N07qHeGu&message=${final_msg}&language=english&route=q&numbers=${values.phonenumber}`)
-            if(response.data.return)
-            {
-                openNotification("success","SMS Sent",`SMS sent to ${values.name}`,'top')
-                const walletresponse = await axios.get(" https://www.fast2sms.com/dev/wallet?authorization=PvvtrxIbU6aK2ktHBGjnNdsnMxPwoL7Myb69SPTqv0rii9OtRXS7N07qHeGu");
-                setwallet(walletresponse.data.wallet)
-            }
-            else
-            {
-                openNotification("error","SMS Not Sent!",`${response.data.status_code}`,'top')
-            }
+            // const response = await axios.get(`https://www.fast2sms.com/dev/bulkV2?authorization=PvvtrxIbU6aK2ktHBGjnNdsnMxPwoL7Myb69SPTqv0rii9OtRXS7N07qHeGu&message=${smsData.message}&language=english&route=q&numbers=${smsData.phonenumber}`)
+            // if(response.data.return)
+            // {
+            //     openNotification("success","SMS Sent",`SMS sent to ${values.name}`,'top')
+            //     const walletresponse = await axios.get(" https://www.fast2sms.com/dev/wallet?authorization=PvvtrxIbU6aK2ktHBGjnNdsnMxPwoL7Myb69SPTqv0rii9OtRXS7N07qHeGu");
+            //     setsmsData({...smsData,wallet:walletresponse.data.wallet})
+            // }
+            // else
+            // {
+            //     openNotification("error","SMS Not Sent!",`${response.data.status_code}`,'top')
+            // }
+            console.log(values)
             setloading(false);
         }
         catch(err){
@@ -111,26 +118,30 @@ const Send_SMS = () => {
 
     const OnRadioChange = (e) => {
         console.log(e.target.value);
-        setsmstype(e.target.value);
+        setsmsData({...smsData,smstype: e.target.value});
     }
 
     useEffect(() => {
         async function walletCall() {
             console.log("wallet called")
             const response = await axios.get(" https://www.fast2sms.com/dev/wallet?authorization=PvvtrxIbU6aK2ktHBGjnNdsnMxPwoL7Myb69SPTqv0rii9OtRXS7N07qHeGu");
-            setwallet(response.data.wallet)
+            setsmsData({...smsData,wallet: response.data.wallet})
         }
         walletCall();
-        setid(revisedRandId());
-        if(wallet<=20){
+        if(parseInt(smsData.wallet)<=20){
             openNotification("warning","Low Balance !",`Balance is less than 20 Rs`,'top')
         }
     }, []);
 
+    useEffect(()=>{
+        const msg=Generate_Message(smsData);
+        const final_msg=msg[Math.floor(Math.random()*msg.length)]
+        setsmsData({...smsData,messageText:final_msg})
+    },[smsData.name,smsData.id,smsData.amount,smsData.smstype]);
     return (
         <div className='SMS_Container'>
             <div className="form_container">
-                <h2>Send SMS - Balance : {wallet} Rs</h2>
+                <h2>Send SMS - Balance : {smsData.wallet} Rs</h2>
                 <Form
                     layout='vertical'
                     name="basic"
@@ -143,22 +154,19 @@ const Send_SMS = () => {
                 >
                     <Form.Item
                         label="Customer Name"
-                        name="name"
                         rules={[{ required: true, message: 'Please input customer name!' }]}
                     >
-                        <Input showCount maxLength={20} />
+                        <Input showCount maxLength={20} value={smsData.name} onChange={(e)=>{setsmsData({...smsData,name:e.target.value})}}/>
                     </Form.Item>
 
                     <Form.Item
                         label="Customer Phone No."
-                        name="phonenumber"
                         rules={[{ required: true, message: 'Please input customer phone number!' }]}
                     >
-                        <Input pattern="^(?:(?:\+|0{0,2})91(\s*[\-]\s*)?|[0]?)?[789]\d{9}$" showCount maxLength={10} />
+                        <Input pattern="^(?:(?:\+|0{0,2})91(\s*[\-]\s*)?|[0]?)?[789]\d{9}$" value={smsData.phonenumber} showCount maxLength={10} onChange={(e)=>{setsmsData({...smsData,phonenumber:e.target.value})}}/>
                     </Form.Item>
 
                     <Form.Item label="Select SMS Type"
-                        name='smstype'
                         rules={[{ required: true, message: 'Please SMS Type!' }]}>
                         <Radio.Group onChange={OnRadioChange}>
                             <Radio.Button value="amount"> Amount Payed </Radio.Button>
@@ -169,9 +177,9 @@ const Send_SMS = () => {
 
                     {
                         (() => {
-                            switch (smstype) {
+                            switch (smsData.smstype) {
                                 case 'id':
-                                    return <p>ID : {id}</p>;
+                                    return <p>ID : {smsData.id}</p>;
                                     break;
                                 case 'amount':
                                     return <Form.Item
@@ -179,26 +187,26 @@ const Send_SMS = () => {
                                         name="amount"
                                         rules={[{ required: true, message: 'Please enter amount!' }]}
                                     >
-                                        <Input showCount type={"number"} />
+                                        <Input showCount type={"number"} value={smsData.amount} onChange={(e)=>{setsmsData({...smsData,amount:e.target.value})}}/>
                                     </Form.Item>;
                                     break;
                                 case 'custom':
-                                    return <Form.Item
-                                        label="Enter Message"
-                                        name="custom_msg"
-                                        rules={[{ required: true, message: 'Please enter message!' }]}
-                                    >
-                                        <Input showCount maxLength={160}  />
-                                    </Form.Item>;
+                                    return <p>Plz enter your custom message below</p>
                                     break;
                                 default: return <p>Select SMS Type</p>; break;
                             }
                         })()
                     }
-
+                    <Form.Item
+                        label="Enter Message"
+                        rules={[{ required: true, message: 'Please enter message!' }]}
+                    >
+                        <Input.TextArea rows={4} showCount maxLength={160} value={smsData.messageText}  onChange={(e)=>{setsmsData({...smsData,messageText :e.target.value})}}/>
+                    {/* <textarea name='messageText' value={smsData.messageText} onChange={(e)=>{setsmsData({...smsData,message:e.target.value})}}></textarea> */}
+                    </Form.Item>
                     <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
-                        <Button htmlType="submit" loading={loading} disabled={loading}>
-                            Submit
+                        <Button htmlType="submit" loading={loading} disabled={loading} type={"primary"}>
+                            Send
                         </Button>
                     </Form.Item>
                 </Form>
