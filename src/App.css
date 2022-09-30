@@ -22,8 +22,20 @@ body{
   padding: 10px;
 }
 
+
 @media only screen and (max-device-width: 480px) {
   .SMS_Container{
     border: 1px solid blue;
+  }
+  .ant-tabs-nav-wrap{
+    /* position:fixed !important; */
+    /* bottom: 0 !important; */
+    display: flex !important;
+    text-align: center !important;
+    /* border: 1px solid red !important; */
+    justify-content: center !important;
+  }
+   .ant-tabs-tab-active{
+    background-color: #dadada !important;
   }
 }
