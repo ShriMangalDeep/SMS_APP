@@ -8,11 +8,12 @@ let headersList = {
   "Accept": "application/json",
 }
 let flag = false; // true => phonenumber | false => string
+let re = new RegExp("^(?:(?:\\+|0{0,2})91(\\s*[\\-]\\s*)?|[0]?)?[789]\\d{9}$");
 const Find_SMS = () => {
   const [val, setVal] = useState();
   const [response, setresponse] = useState();
   useEffect(() => {
-    if (/^(?:(?:\+|0{0,2})91(\s*[\-]\s*)?|[0]?)?[789]\d{9}$/.test(val)) {
+    if (re.test(val)) {
       //phone number
       flag = true;
     }
