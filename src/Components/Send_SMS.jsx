@@ -60,20 +60,16 @@ function Generate_Message(data) {
                 `Congratulations ${data.name}, your registration ID is ${data.id} for ${Festival} offer. We also accept online payment at 9408276130 - FROM SUNGOLD (MANGALDEEP).`,
                 `Congratulations ${data.name} having listed with ID : ${data.id} for ${Festival} offer. We also accept online payment at 9408276130 - FROM SUNGOLD (MANGALDEEP).`
             ]
-            break;
         case 'amount':
             return [
                 `Thank you ${data.name}, we have received your payment for ${data.amount} Rs. We also accept online payment at 9408276130 - FROM SUNGOLD (MANGALDEEP).`,
                 `Thankyou ${data.name}, we got your payment of ${data.amount} Rs under ${Festival} offer. We also accept online payment at 9408276130 - FROM SUNGOLD (MANGALDEEP).`,
                 `Welcome to ${Festival} offer ${data.name}, we got your payment of ${data.amount} Rs. We also accept online payment at 9408276130 - FROM SUNGOLD (MANGALDEEP).`
             ]
-            break;
         case 'custom':
             return [data.message]
-            break;
         default :
             return [data.message]
-            break;
     }
     // return [
     //     `Welcome ${data.name} for Diwali Offer from SUNGOLD JEWELLERY, we have recevied your payment of `
@@ -136,7 +132,7 @@ const Send_SMS = () => {
             console.log("open notification")
             openNotification("warning","Low Balance !",`Balance is less than 20 Rs`,'top')
         }
-    }, []);
+    },[]);
 
     useEffect(()=>{
         const msg=Generate_Message(smsData);
@@ -188,7 +184,6 @@ const Send_SMS = () => {
                             switch (smsData.smstype) {
                                 case 'id':
                                     return <p>ID : {smsData.id}</p>;
-                                    break;
                                 case 'amount':
                                     return <Form.Item
                                         label="Enter Amount"
@@ -197,11 +192,9 @@ const Send_SMS = () => {
                                     >
                                         <Input showCount type={"number"} value={smsData.amount} onChange={(e)=>{setsmsData({...smsData,amount:e.target.value})}}/>
                                     </Form.Item>;
-                                    break;
                                 case 'custom':
                                     return <p>Plz enter your custom message below</p>
-                                    break;
-                                default: return <p>Select SMS Type</p>; break;
+                                default: return <p>Select SMS Type</p>;
                             }
                         })()
                     }
