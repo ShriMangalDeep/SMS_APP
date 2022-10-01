@@ -70,6 +70,7 @@ const Find_SMS = () => {
   return (
     <div className='SMS_Container' style={{ padding: "10px" }}>
       <div className="Find_SMS_Container">
+      <h2 style={{textAlign:"center"}}>Search For SMS</h2>
         <div className="find_sms_form" style={{ display: "flex", width: "100%" }}>
           <Input value={val} onChange={(e) => { setVal(e.target.value)}} showCount maxLength={20} placeholder={"Search anything ..."} />
           <Button type='primary' onClick={onSubmit}>Go</Button>
