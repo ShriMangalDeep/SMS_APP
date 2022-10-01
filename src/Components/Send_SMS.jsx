@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import axios from 'axios';
-import { Form, Input, Button, Radio ,notification} from 'antd'
+import { Form, Input, Button, Radio ,notification, Space} from 'antd'
 
 const SMS_KEY=process.env.REACT_APP_SMS_KEY;
 
@@ -56,24 +56,20 @@ function Generate_Message(data) {
     switch (data.smstype) {
         case 'id':  
             return [
-                `Welcome ${data.name} for ${Festival} offer, your customer-id is ${data.id}. We also accept online payment at 9408276130 - FROM SUNGOLD (MANGALDEEP).`,
-                `Congratulations ${data.name}, your registration ID is ${data.id} for ${Festival} offer. We also accept online payment at 9408276130 - FROM SUNGOLD (MANGALDEEP).`,
-                `Congratulations ${data.name} having listed with ID : ${data.id} for ${Festival} offer. We also accept online payment at 9408276130 - FROM SUNGOLD (MANGALDEEP).`
+                `Welcome ${data.name}, your customer-id is ${data.id}. We also accept online payment at 9408276130.`,
+                `Congratulations ${data.name}, your registration ID is ${data.id}. We also accept online payment at 9408276130.`,
+                `Congratulations ${data.name} having listed with ID : ${data.id}. We also accept online payment at 9408276130.`
             ]
-            break;
         case 'amount':
             return [
-                `Thank you ${data.name}, we have received your payment for ${data.amount} Rs. We also accept online payment at 9408276130 - FROM SUNGOLD (MANGALDEEP).`,
-                `Thankyou ${data.name}, we got your payment of ${data.amount} Rs under ${Festival} offer. We also accept online payment at 9408276130 - FROM SUNGOLD (MANGALDEEP).`,
-                `Welcome to ${Festival} offer ${data.name}, we got your payment of ${data.amount} Rs. We also accept online payment at 9408276130 - FROM SUNGOLD (MANGALDEEP).`
+                `Thank you ${data.name}, we have received your payment for ${data.amount} Rs. We also accept online payment at 9408276130.`,
+                `Thankyou ${data.name}, we got your payment of ${data.amount} Rs. We also accept online payment at 9408276130.`,
+                `Welcome ${data.name}, we got your payment of ${data.amount} Rs. We also accept online payment at 9408276130.`
             ]
-            break;
         case 'custom':
             return [data.message]
-            break;
         default :
             return [data.message]
-            break;
     }
     // return [
     //     `Welcome ${data.name} for Diwali Offer from SUNGOLD JEWELLERY, we have recevied your payment of `
@@ -81,6 +77,7 @@ function Generate_Message(data) {
 }
 
 const Send_SMS = () => {
+    const [form] = Form.useForm();
     const [smsData,setsmsData] = useState({
         name:"",
         phonenumber:"",
@@ -95,7 +92,7 @@ const Send_SMS = () => {
     const onFinish = async (values) => {
         setloading(true);
         try{
-            const response = await axios.get(`https://www.fast2sms.com/dev/bulkV2?authorization=${SMS_KEY}&message=${smsData.message}&language=english&route=q&numbers=${smsData.phonenumber}`)
+            const response = await axios.get(`https://www.fast2sms.com/dev/bulkV2?authorization=${SMS_KEY}&message=${smsData.messageText.trim()}&language=english&route=q&numbers=${smsData.phonenumber.trim()}`)
             if(response.data.return)
             {
                 openNotification("success","SMS Sent",`SMS sent to ${smsData.name}`,'top')
@@ -104,7 +101,7 @@ const Send_SMS = () => {
             }
             else
             {
-                openNotification("error","SMS Not Sent!",`${response.data.status_code}`,'top')
+                openNotification("error","SMS Not Sent!",`${response.data.message}`,'top')
             }
             console.log(values)
             setloading(false);
@@ -120,6 +117,10 @@ const Send_SMS = () => {
         openNotification('error',"SMS Not Send!","Please fill all details correctly",'top')
     };
 
+    const onReset = () => {
+        form.resetFields();
+      };
+
     const OnRadioChange = (e) => {
         console.log(e.target.value);
         setsmsData({...smsData,smstype: e.target.value});
@@ -133,10 +134,17 @@ const Send_SMS = () => {
         }
         walletCall();
         if(parseInt(smsData.wallet)<=20){
-            console.log("open notification")
-            openNotification("warning","Low Balance !",`Balance is less than 20 Rs`,'top')
+            if (parseInt(smsData.wallet)===0)
+            {
+                setloading(true);
+                openNotification("error","Balance is 0 Rs","SMS will not be send plz recharge !");
+            }
+            else
+            {
+                openNotification("warning","Low Balance !",`Balance is less than 20 Rs`,'top')
+            }
         }
-    }, []);
+    },[]);
 
     useEffect(()=>{
         const msg=Generate_Message(smsData);
@@ -148,6 +156,7 @@ const Send_SMS = () => {
             <div className="form_container">
                 <h2>Send SMS - Balance : {smsData.wallet} Rs</h2>
                 <Form
+                    form={form}
                     layout='vertical'
                     name="basic"
                     // labelCol={{ span: 8 }}
@@ -188,7 +197,6 @@ const Send_SMS = () => {
                             switch (smsData.smstype) {
                                 case 'id':
                                     return <p>ID : {smsData.id}</p>;
-                                    break;
                                 case 'amount':
                                     return <Form.Item
                                         label="Enter Amount"
@@ -197,11 +205,9 @@ const Send_SMS = () => {
                                     >
                                         <Input showCount type={"number"} value={smsData.amount} onChange={(e)=>{setsmsData({...smsData,amount:e.target.value})}}/>
                                     </Form.Item>;
-                                    break;
                                 case 'custom':
                                     return <p>Plz enter your custom message below</p>
-                                    break;
-                                default: return <p>Select SMS Type</p>; break;
+                                default: return <p>Select SMS Type</p>;
                             }
                         })()
                     }
@@ -212,10 +218,16 @@ const Send_SMS = () => {
                         <Input.TextArea rows={4} showCount maxLength={160} value={smsData.messageText}  onChange={(e)=>{setsmsData({...smsData,messageText :e.target.value})}}/>
                     {/* <textarea name='messageText' value={smsData.messageText} onChange={(e)=>{setsmsData({...smsData,message:e.target.value})}}></textarea> */}
                     </Form.Item>
-                    <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
+                    <Form.Item >
+                        <Space>
+
                         <Button htmlType="submit" loading={loading} disabled={loading} type={"primary"}>
                             Send
                         </Button>
+                        <Button htmlType="button" onClick={onReset} type={"primary"}>
+                            Reset
+                        </Button>
+                        </Space>
                     </Form.Item>
                 </Form>
 
